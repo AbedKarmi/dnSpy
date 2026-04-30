@@ -10,6 +10,10 @@ namespace dnSpy.AIChat.Services {
 		public string? OpenAIApiKey { get; set; }
 		public string? OpenAIBaseUrl { get; set; }
 		public string? ClaudeCliPath { get; set; }
+		/// <summary>MCP server URL injected via --mcp-config when using the Claude CLI provider.</summary>
+		public string? McpServerUrl { get; set; }
+
+		public const string DefaultMcpServerUrl = "http://localhost:8765/mcp";
 
 		static string SettingsPath {
 			get {
@@ -37,6 +41,9 @@ namespace dnSpy.AIChat.Services {
 			}
 			catch { }
 		}
+
+		public static string DefaultMcpConfigFor(string? url) =>
+			string.IsNullOrWhiteSpace(url) ? DefaultMcpServerUrl : url!;
 
 		public static string DefaultModelFor(string provider) => provider switch {
 			"Anthropic API" => "claude-sonnet-4-5-20250929",

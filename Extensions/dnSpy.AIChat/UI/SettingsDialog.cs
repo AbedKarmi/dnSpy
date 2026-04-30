@@ -16,7 +16,7 @@ namespace dnSpy.AIChat.UI {
 			};
 
 			var grid = new Grid { Margin = new Thickness(10) };
-			for (int i = 0; i < 6; i++)
+			for (int i = 0; i < 7; i++)
 				grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 			grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 			grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -35,6 +35,7 @@ namespace dnSpy.AIChat.UI {
 			var openai = AddRow(1, "OpenAI API key:", s.OpenAIApiKey);
 			var openaiUrl = AddRow(2, "OpenAI base URL:", s.OpenAIBaseUrl);
 			var cli = AddRow(3, "Claude CLI path:", s.ClaudeCliPath);
+			var mcpUrl = AddRow(4, "MCP server URL:", string.IsNullOrWhiteSpace(s.McpServerUrl) ? ChatSettings.DefaultMcpServerUrl : s.McpServerUrl);
 
 			var info = new TextBlock {
 				TextWrapping = TextWrapping.Wrap,
@@ -44,21 +45,23 @@ namespace dnSpy.AIChat.UI {
 					"• Claude CLI provider lets you use your Claude Pro/Max subscription. The 'claude' CLI must be installed and logged in (Claude Code).\n" +
 					"• Anthropic API requires a separately billed API key from console.anthropic.com.\n" +
 					"• OpenAI base URL is optional; leave blank for https://api.openai.com/v1. You can point it at any OpenAI-compatible endpoint (Azure, local LM Studio / Ollama proxy, etc).\n" +
+					"• MCP server URL is the dnSpy MCP extension endpoint. The Claude CLI provider injects it via --mcp-config automatically.\n" +
 					"• Settings are stored at %AppData%\\dnSpy\\AIChat.json.",
 			};
-			Grid.SetRow(info, 6); Grid.SetColumnSpan(info, 2); Grid.SetColumn(info, 0); grid.Children.Add(info);
+			Grid.SetRow(info, 7); Grid.SetColumnSpan(info, 2); Grid.SetColumn(info, 0); grid.Children.Add(info);
 
 			var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
 			var ok = new Button { Content = "Save", Padding = new Thickness(14, 3, 14, 3), Margin = new Thickness(0, 0, 6, 0), IsDefault = true };
 			var cancel = new Button { Content = "Cancel", Padding = new Thickness(14, 3, 14, 3), IsCancel = true };
 			buttons.Children.Add(ok); buttons.Children.Add(cancel);
-			Grid.SetRow(buttons, 7); Grid.SetColumnSpan(buttons, 2); grid.Children.Add(buttons);
+			Grid.SetRow(buttons, 8); Grid.SetColumnSpan(buttons, 2); grid.Children.Add(buttons);
 
 			ok.Click += (_, __) => {
 				s.AnthropicApiKey = anthropic.Text;
 				s.OpenAIApiKey = openai.Text;
 				s.OpenAIBaseUrl = openaiUrl.Text;
 				s.ClaudeCliPath = cli.Text;
+				s.McpServerUrl = string.IsNullOrWhiteSpace(mcpUrl.Text) ? ChatSettings.DefaultMcpServerUrl : mcpUrl.Text.Trim();
 				s.Save();
 				win.DialogResult = true;
 				win.Close();

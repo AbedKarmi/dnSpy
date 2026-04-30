@@ -24,9 +24,32 @@ namespace dnSpy.AIChat.Services {
 
 			var prompt = BuildPrompt(history);
 
+			// Write MCP config to a temp file so the subprocess always sees the dnSpy MCP
+			// server regardless of which working directory the claude process inherits.
+			string? mcpTempFile = null;
+			var mcpUrl = string.IsNullOrWhiteSpace(settings.McpServerUrl)
+				? ChatSettings.DefaultMcpServerUrl
+				: settings.McpServerUrl!.Trim();
+			if (!string.IsNullOrEmpty(mcpUrl)) {
+				mcpTempFile = Path.GetTempFileName();
+				File.WriteAllText(mcpTempFile, BuildMcpConfig(mcpUrl), Encoding.UTF8);
+			}
+
+			var argParts = new List<string> { "-p", QuoteArg(prompt) };
+			if (mcpTempFile != null) {
+				argParts.Add("--mcp-config");
+				argParts.Add(QuoteArg(mcpTempFile));
+				// Pre-approve all dnspy MCP tools so Claude doesn't prompt for permission.
+				argParts.Add("--allowedTools");
+				argParts.Add("mcp__dnspy__*");
+			}
+
 			var psi = new ProcessStartInfo {
 				FileName = exe,
-				Arguments = "-p " + QuoteArg(prompt),
+				Arguments = string.Join(" ", argParts),
+				// Run from the user profile directory so that project-scoped MCP configs
+				// stored under ~/ in .claude.json are discovered by the subprocess.
+				WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 				RedirectStandardInput = true,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
@@ -37,30 +60,42 @@ namespace dnSpy.AIChat.Services {
 			};
 
 			using var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
-			if (!proc.Start())
-				throw new InvalidOperationException("Failed to start claude CLI.");
+			try {
+				if (!proc.Start())
+					throw new InvalidOperationException("Failed to start claude CLI.");
 
-			var stderrTask = Task.Run(() => proc.StandardError.ReadToEndAsync());
+				var stderrTask = Task.Run(() => proc.StandardError.ReadToEndAsync());
 
-			var buffer = new char[1024];
-			while (true) {
-				cancellationToken.ThrowIfCancellationRequested();
-				int read = await proc.StandardOutput.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-				if (read <= 0)
-					break;
-				onChunk(new string(buffer, 0, read));
-			}
+				var buffer = new char[1024];
+				while (true) {
+					cancellationToken.ThrowIfCancellationRequested();
+					int read = await proc.StandardOutput.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+					if (read <= 0)
+						break;
+					onChunk(new string(buffer, 0, read));
+				}
 
 #if NET5_0_OR_GREATER
-			await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+				await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 #else
-			await Task.Run(() => proc.WaitForExit(), cancellationToken).ConfigureAwait(false);
+				await Task.Run(() => proc.WaitForExit(), cancellationToken).ConfigureAwait(false);
 #endif
 
-			if (proc.ExitCode != 0) {
-				var err = await stderrTask.ConfigureAwait(false);
-				throw new InvalidOperationException($"claude CLI exited with code {proc.ExitCode}. {err}");
+				if (proc.ExitCode != 0) {
+					var err = await stderrTask.ConfigureAwait(false);
+					throw new InvalidOperationException($"claude CLI exited with code {proc.ExitCode}. {err}");
+				}
 			}
+			finally {
+				if (mcpTempFile != null)
+					try { File.Delete(mcpTempFile); } catch { }
+			}
+		}
+
+		// Build a minimal MCP config JSON pointing at the given HTTP server URL.
+		static string BuildMcpConfig(string url) {
+			url = url.Replace("\\", "\\\\").Replace("\"", "\\\"");
+			return $"{{\"mcpServers\":{{\"dnspy\":{{\"type\":\"http\",\"url\":\"{url}\"}}}}}}";
 		}
 
 		static string BuildPrompt(IReadOnlyList<ChatMessage> history) {
