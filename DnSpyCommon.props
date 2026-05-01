@@ -6,7 +6,7 @@
         - .github/workflows/build.yml
         - DnSpyRoslyn.props
     NOTE: Update the ABOVE files when TargetFrameworks is updated -->
-    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
     <IsDotNetFramework>false</IsDotNetFramework>
     <IsDotNet>false</IsDotNet>
     <IsSelfContainedDotNet>false</IsSelfContainedDotNet>
@@ -32,9 +32,9 @@
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
 
     <!-- Update app.config whenever this value changes -->
-    <DnSpyAssemblyVersion>6.5.1.0</DnSpyAssemblyVersion>
+    <DnSpyAssemblyVersion>6.6.0.0</DnSpyAssemblyVersion>
     <!-- This is shown in the title bar -->
-    <DnSpyAssemblyInformationalVersion>v6.5.1</DnSpyAssemblyInformationalVersion>
+    <DnSpyAssemblyInformationalVersion>v6.6.0</DnSpyAssemblyInformationalVersion>
     <!-- Prevent .NET SDK from appening the git commit hash to the information version -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <DnSpyAssemblyCopyright>Copyright (C) 2014-2020 de4dot@gmail.com</DnSpyAssemblyCopyright>
@@ -59,8 +59,6 @@
     <SCCompositionVersion>10.0.7</SCCompositionVersion>
     <NuGetVersion>7.3.1</NuGetVersion>
     <DbgShimVersion>9.0.661903</DbgShimVersion>
-    <SCImmutableVersion>10.0.7</SCImmutableVersion>
-    <NrbfVersion>10.0.7</NrbfVersion>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)Build\ConvertToNetstandardReferences\ConvertToNetstandardReferences.tasks" Condition=" '$(IsDotNet)' == 'true' " />

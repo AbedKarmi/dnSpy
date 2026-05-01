@@ -32,7 +32,17 @@
                         <DataTemplate>
                             <Border Margin="2" Padding="6" CornerRadius="3" BorderThickness="1" BorderBrush="#33808080">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding Role}" FontWeight="Bold" Opacity="0.8" />
+                                    <DockPanel>
+                                        <TextBlock Text="{Binding Role}" FontWeight="Bold" Opacity="0.8" DockPanel.Dock="Left" />
+                                        <Button Content="📋"
+                                                Width="24"
+                                                Height="24"
+                                                Margin="4,0,0,0"
+                                                VerticalAlignment="Center"
+                                                DockPanel.Dock="Right"
+                                                ToolTip="Copy message"
+                                                Command="{Binding CopyCommand}" />
+                                    </DockPanel>
                                     <TextBox Text="{Binding Content, Mode=OneWay}"
                                              IsReadOnly="True"
                                              BorderThickness="0"
